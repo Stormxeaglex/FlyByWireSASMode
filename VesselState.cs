@@ -95,6 +95,30 @@ namespace FlyByWireSASMode
             }
             else
             {
+                // Check if the navball is in surface mode
+                if (FlightGlobals.FoRMode == FoRModes.Surface)
+                {
+                    // Use horizontal velocity
+                    Vector3d srfVel = vessel.srf_velocity;
+                    Vector3d up = vessel.up;
+            
+                    // Remove the vertical component
+                    Vector3d horizontalVel = srfVel - Vector3d.Project(srfVel, up);
+            
+                    if (horizontalVel.sqrMagnitude > 1e-6)
+                    {
+                        direction = horizontalVel.normalized;
+                        if (sasMode == CustomSASMode.ParallelNeg)
+                            direction = -direction;
+                    }
+                    else
+                    {
+                        // Vessel is stationary – keep current orientation (point up as a safe default)
+                        direction = up;
+                    }
+                }
+                else
+                {           
                 Transform targetTransform = vessel.targetObject?.GetTransform();
                 if (targetTransform == null)
                     return;
