@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using KSP;
 
 namespace FlyByWireSASMode
 {
@@ -57,7 +58,7 @@ namespace FlyByWireSASMode
 
                     double pitch = GameSettings.AXIS_PITCH.GetAxis();
                     if (GameSettings.PITCH_DOWN.GetKey())
-                        pitch = precisionMode ? -0.25 : - 1.0;
+                        pitch = precisionMode ? -0.25 : -1.0;
                     else if (GameSettings.PITCH_UP.GetKey())
                         pitch = precisionMode ? 0.25 : 1.0;
 
@@ -95,16 +96,16 @@ namespace FlyByWireSASMode
             }
             else
             {
-                // Check if the navball is in surface mode
-                if (FlightGlobals.FoRMode == FoRModes.Surface)
+                Transform targetTransform = vessel.targetObject?.GetTransform();
+                if (targetTransform == null)
                 {
                     // Use horizontal velocity
                     Vector3d srfVel = vessel.srf_velocity;
                     Vector3d up = vessel.up;
-            
+
                     // Remove the vertical component
                     Vector3d horizontalVel = srfVel - Vector3d.Project(srfVel, up);
-            
+
                     if (horizontalVel.sqrMagnitude > 1e-6)
                     {
                         direction = horizontalVel.normalized;
@@ -114,25 +115,21 @@ namespace FlyByWireSASMode
                     else
                     {
                         // Vessel is stationary – keep current orientation (point up as a safe default)
-                        direction = up;
+                        direction = vessel.GetTransform().up;
                     }
-                }
+                }   
                 else
-                {           
-                Transform targetTransform = vessel.targetObject?.GetTransform();
-                if (targetTransform == null)
-                    return;
+                {
 
-                direction = vessel.targetObject is Vessel ? targetTransform.up : vessel.targetObject.GetFwdVector();
-                if (sasMode == CustomSASMode.ParallelNeg)
-                    direction *= -1f;
+                    direction = vessel.targetObject is Vessel ? targetTransform.up : vessel.targetObject.GetFwdVector();
+                    if (sasMode == CustomSASMode.ParallelNeg)
+                        direction *= -1f;
+                }      
             }
-
             // set SAS to follow requested direction
             vessel.Autopilot.SAS.lockedMode = false;
             vessel.Autopilot.SAS.SetTargetOrientation(direction, false);
+
         }
-
-
     }
 }

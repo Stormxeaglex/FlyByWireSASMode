@@ -309,7 +309,7 @@ namespace FlyByWireSASMode
                 parallelNegButton.gameObject.SetActive(isModeAvailable);
             }
 
-            bool isSurfaceMode = (FlightGlobals.FoRMode == FoRModes.Surface);
+            bool isSurfaceMode = true;
             bool isTargetAvailable = activeVessel.targetObject?.GetTransform() != null;
             bool shouldBeInteractable = isSurfaceMode || isTargetAvailable;
             if (shouldBeInteractable != parallelPosButton.interactable)
