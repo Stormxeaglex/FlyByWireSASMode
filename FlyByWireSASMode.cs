@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Expansions;
+using KSP;
 using KSP.UI;
 using KSP.UI.Screens.Flight;
 using KSP.UI.TooltipTypes;
@@ -335,7 +336,7 @@ namespace FlyByWireSASMode
             bool isParallelMode = activeVesselState.sasMode == CustomSASMode.ParallelPos || activeVesselState.sasMode == CustomSASMode.ParallelNeg;
 
             // if active vessel can't use the mode anymore, destroy the state
-            if (!isModeAvailableOnActiveVessel || (!isTargetAvailable && isParallelMode))
+            if (!isModeAvailableOnActiveVessel || (!shouldBeInteractable && isParallelMode))
             {
                 activeVesselState.Destroy();
                 activeVesselState = null;
