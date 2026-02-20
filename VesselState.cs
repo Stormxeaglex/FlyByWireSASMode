@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using KSP;
+using System.Collections;
 
 namespace FlyByWireSASMode
 {
@@ -94,42 +95,54 @@ namespace FlyByWireSASMode
                     direction.Normalize();
                 }
             }
-            else
+            else if (sasMode == CustomSASMode.ParallelPos || sasMode == CustomSASMode.ParallelNeg)
             {
-                Transform targetTransform = vessel.targetObject?.GetTransform();
-                if (targetTransform == null)
+                //Parallel SAS mode directions based on current speed display mode
+                Vector3d? CalculatedSASVector = null;
+
+                switch (FlightGlobals.speedDisplayMode)
                 {
-                    // Use horizontal velocity
-                    Vector3d srfVel = vessel.srf_velocity;
-                    Vector3d up = vessel.up;
+                    case FlightGlobals.SpeedDisplayModes.Surface:
+                        CalculatedSASVector = GetSASHorizontalSurfaceVelocityDirection(vessel);
+                        break;
+                    case FlightGlobals.SpeedDisplayModes.Orbit:
+                        break;
+                    case FlightGlobals.SpeedDisplayModes.Target:
+                        CalculatedSASVector = GetSASTargetForwardDirection(vessel);
+                        break;
+                }
 
-                    // Remove the vertical component
-                    Vector3d horizontalVel = srfVel - Vector3d.Project(srfVel, up);
-
-                    if (horizontalVel.sqrMagnitude > 1e-6)
-                    {
-                        direction = horizontalVel.normalized;
-                        if (sasMode == CustomSASMode.ParallelNeg)
-                            direction = -direction;
-                    }
-                    else
-                    {
-                        // Vessel is stationary – keep current orientation (point up as a safe default)
-                        direction = vessel.GetTransform().up;
-                    }
-                }   
-                else
-                {
-
-                    direction = vessel.targetObject is Vessel ? targetTransform.up : vessel.targetObject.GetFwdVector();
-                    if (sasMode == CustomSASMode.ParallelNeg)
-                        direction *= -1f;
-                }      
+                if (CalculatedSASVector.HasValue)
+                    direction = CalculatedSASVector.Value;
             }
+
             // set SAS to follow requested direction
             vessel.Autopilot.SAS.lockedMode = false;
             vessel.Autopilot.SAS.SetTargetOrientation(direction, false);
-
         }
+
+
+        private Vector3d? GetSASHorizontalSurfaceVelocityDirection(Vessel vessel)
+        {
+            Vector3d HorizontalVelocity = vessel.srf_velocity - Vector3d.Project(vessel.srf_velocity, vessel.up);
+
+            if (HorizontalVelocity.sqrMagnitude <= 1e-5)
+                return null;
+
+            float sign = (sasMode == CustomSASMode.ParallelNeg) ? -1f : 1f;
+            return sign * HorizontalVelocity.normalized;
+        }
+
+        private Vector3d? GetSASTargetForwardDirection(Vessel vessel)
+        {
+            Transform targetTransform = vessel.targetObject?.GetTransform();
+            if (targetTransform == null)
+                return null;
+            
+            Vector3d TargetForwardVector = (vessel.targetObject is Vessel) ? targetTransform.up : vessel.targetObject.GetFwdVector();
+            float sign = (sasMode == CustomSASMode.ParallelNeg) ? -1f : 1f;
+            return sign * TargetForwardVector;
+        }
+
     }
 }
